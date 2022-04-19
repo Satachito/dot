@@ -4,6 +4,8 @@ using namespace std;
 #include	<chrono>
 using namespace chrono;
 
+#include <immintrin.h>
+
 #define	D	1024
 
 float
@@ -47,25 +49,26 @@ Dot_MultiAVX512( T* l, T* r, size_t size ) {
 template	<typename F>	void
 Main( size_t W ) {
 cerr << "numData : " << W / ( 1024 * 1024 ) << 'M' << endl;
+cerr << "memory  : " << W * D * sizeof( F ) / ( 1024 * 1024 * 1024 ) << 'G' << endl;
+
 //	D dim の W 個分のデータ
-	auto data = new F[ W * D ];
+	auto data = new ( align_val_t{ 64 } ) F[ W * D ];
 	for ( size_t _ = 0; _ < W * D; _++ ) data[ _ ] = 2;
-cerr << "memory  : " << W * sizeof( F ) / ( 1024 * 1024 ) << 'G' << endl;
 //	結果
 auto start = system_clock::now();
 	auto result = new F[ W ];
-	for ( size_t i = 0; i < W; i++ ) result[ _ ] = DOT( data, data[ _ * D ], D / 16 );
+	for ( size_t _ = 0; _ < W; _++ ) result[ _ ] = Dot( data, data + _ * D, D / 16 );
 auto duration = duration_cast<milliseconds>( system_clock::now() - start ).count();
 
 cerr << "duration: " << duration << endl;
 
-	for ( size_t x = 0; x < W; x++ ) if ( $[ x ] != 4096 ) {
-		cerr << x << ':' << $[ x ] << endl;
+	for ( size_t _ = 0; _ < W; _++ ) if ( result[ _ ] != 4096 ) {
+		cerr << _ << ':' << result[ _ ] << endl;
 		throw "eh?";
 	}
 
 	delete[] data;
-	delete[] result
+	delete[] result;
 }
 
 int
