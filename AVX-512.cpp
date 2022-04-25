@@ -57,6 +57,7 @@ cerr << "memory  : " << W * D * sizeof( F ) / ( 1024 * 1024 * 1024 ) << 'G' << e
 //	結果
 auto start = system_clock::now();
 	auto result = new F[ W ];
+#pragma omp parallel for
 	for ( size_t _ = 0; _ < W; _++ ) result[ _ ] = Dot( data, data + _ * D, D / 16 );
 auto duration = duration_cast<milliseconds>( system_clock::now() - start ).count();
 
